@@ -1,54 +1,127 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ref786App</title>
+  <title>Ref786App — Smart Referral System</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    :root { --pad:16px; --radius:18px; --shadow:0 10px 30px rgba(0,0,0,.12); }
-    body { margin:0; font-family: system-ui, Segoe UI, Roboto, sans-serif;
-           background: var(--tg-theme-bg-color, #ffffff); color: var(--tg-theme-text-color, #111); }
-    .wrap { padding: var(--pad); max-width: 720px; margin: 0 auto; }
-    .card { background: var(--tg-theme-secondary-bg-color, #f6f6f6); border-radius: var(--radius);
-            padding: var(--pad); box-shadow: var(--shadow); }
-    .row { display:flex; gap:12px; flex-wrap:wrap; margin-top:12px; }
-    button { padding:12px 16px; border-radius:12px; border:0; cursor:pointer;
-             background: var(--tg-theme-button-color, #2a9df4);
-             color: var(--tg-theme-button-text-color, #fff); font-weight:600; }
-    .muted { opacity:.75; }
+    /* Global page styling */
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: "Segoe UI", Roboto, sans-serif;
+      text-align: center;
+      background: linear-gradient(135deg, #4b6cb7, #182848); /* Blue gradient */
+      color: white;
+      overflow: hidden;
+    }
+
+    /* Logo styling */
+    .logo {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      margin-bottom: 25px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+      border: 3px solid rgba(255, 255, 255, 0.5);
+      object-fit: cover;
+    }
+
+    /* Heading text */
+    h2 {
+      font-size: 1.5rem;
+      margin-bottom: 30px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* Button layout */
+    .btn-row {
+      display: flex;
+      gap: 25px;
+      justify-content: center;
+    }
+
+    /* Button styling */
+    button {
+      padding: 14px 36px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 30px;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    button:active {
+      transform: scale(0.97);
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .yes {
+      background: #00c853;
+      color: #fff;
+      box-shadow: 0 6px 18px rgba(0, 200, 83, 0.4);
+    }
+
+    .no {
+      background: #e53935;
+      color: #fff;
+      box-shadow: 0 6px 18px rgba(229, 57, 53, 0.4);
+    }
+
+    /* Footer text */
+    .footer {
+      position: absolute;
+      bottom: 16px;
+      font-size: 0.85rem;
+      opacity: 0.8;
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h2>Ref786App — Smart Referral System</h2>
-    <div class="card">
-      <div id="hello">Loading user…</div>
-      <div class="muted" id="details"></div>
-      <div class="row">
-        <button id="send">Send “Register” to bot</button>
-        <button id="close">Close App</button>
-      </div>
-    </div>
+  <!-- Logo (replace with your hosted logo URL) -->
+  <img src="https://tabassumkhan-ss.github.io/ref786app/logo.png" alt="Ref786App Logo" class="logo" />
+
+  <!-- Main text -->
+  <h2>Do you want to Register?</h2>
+
+  <!-- Buttons -->
+  <div class="btn-row">
+    <button class="yes" id="yesBtn">✅ Yes</button>
+    <button class="no" id="noBtn">❌ No</button>
   </div>
+
+  <div class="footer">Ref786App — Smart Referral System</div>
 
   <script>
     const tg = window.Telegram.WebApp;
     tg.ready();
     tg.expand();
 
-    const user = tg.initDataUnsafe?.user;
-    const startParam = tg.initDataUnsafe?.start_param;
-
-    document.getElementById('hello').textContent =
-      user ? `Hi ${user.first_name}${user.username ? ' (@'+user.username+')' : ''}!` : 'Hi!';
-    document.getElementById('details').textContent =
-      `Your ID: ${user?.id ?? 'unknown'} • Start param: ${startParam ?? '(none)'}`;
-
-    document.getElementById('send').onclick = () => {
-      tg.sendData(JSON.stringify({action:'register', from:'ui'}));
+    // Handle Yes button
+    document.getElementById("yesBtn").onclick = () => {
+      const user = tg.initDataUnsafe?.user;
+      tg.sendData(JSON.stringify({
+        action: "register",
+        user_id: user?.id,
+        username: user?.username,
+        first_name: user?.first_name,
+        last_name: user?.last_name
+      }));
+      tg.close();
     };
-    document.getElementById('close').onclick = () => tg.close();
+
+    // Handle No button
+    document.getElementById("noBtn").onclick = () => {
+      tg.sendData(JSON.stringify({ action: "cancel" }));
+      tg.close();
+    };
   </script>
 </body>
 </html>
