@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ref786App</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root { --pad:16px; --radius:18px; --shadow:0 10px 30px rgba(0,0,0,.12); }
+    body { margin:0; font-family: system-ui, Segoe UI, Roboto, sans-serif;
+           background: var(--tg-theme-bg-color, #ffffff); color: var(--tg-theme-text-color, #111); }
+    .wrap { padding: var(--pad); max-width: 720px; margin: 0 auto; }
+    .card { background: var(--tg-theme-secondary-bg-color, #f6f6f6); border-radius: var(--radius);
+            padding: var(--pad); box-shadow: var(--shadow); }
+    .row { display:flex; gap:12px; flex-wrap:wrap; margin-top:12px; }
+    button { padding:12px 16px; border-radius:12px; border:0; cursor:pointer;
+             background: var(--tg-theme-button-color, #2a9df4);
+             color: var(--tg-theme-button-text-color, #fff); font-weight:600; }
+    .muted { opacity:.75; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h2>Ref786App — Smart Referral System</h2>
+    <div class="card">
+      <div id="hello">Loading user…</div>
+      <div class="muted" id="details"></div>
+      <div class="row">
+        <button id="send">Send “Register” to bot</button>
+        <button id="close">Close App</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+
+    const user = tg.initDataUnsafe?.user;
+    const startParam = tg.initDataUnsafe?.start_param;
+
+    document.getElementById('hello').textContent =
+      user ? `Hi ${user.first_name}${user.username ? ' (@'+user.username+')' : ''}!` : 'Hi!';
+    document.getElementById('details').textContent =
+      `Your ID: ${user?.id ?? 'unknown'} • Start param: ${startParam ?? '(none)'}`;
+
+    document.getElementById('send').onclick = () => {
+      tg.sendData(JSON.stringify({action:'register', from:'ui'}));
+    };
+    document.getElementById('close').onclick = () => tg.close();
+  </script>
+</body>
+</html>
