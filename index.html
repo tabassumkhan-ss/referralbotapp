@@ -6,7 +6,6 @@
   <title>Ref786App — Smart Referral System</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    :root { --pad:20px; }
     * { box-sizing: border-box; }
     body {
       margin:0; height:100vh; display:flex; align-items:center; justify-content:center;
@@ -21,134 +20,111 @@
       background: rgba(255,255,255,0.06);
       border: 1px solid rgba(255,255,255,0.15);
       border-radius: 20px;
-      padding: 24px;
+      padding: 28px 22px;
       box-shadow: 0 18px 50px rgba(0,0,0,.25);
       backdrop-filter: blur(6px);
     }
     .logo {
-      width: 110px; height: 110px; border-radius: 50%;
-      border: 4px solid rgba(255,255,255,.5);
-      box-shadow: 0 12px 30px rgba(0,0,0,.35), 0 0 0 8px rgba(255,255,255,.08) inset;
-      object-fit: cover; margin-bottom: 16px;
+      width: 88px; height: 88px; border-radius: 50%; object-fit: cover;
+      border: 4px solid rgba(255,255,255,.45); margin: 0 auto 14px; display:block;
+      box-shadow: 0 10px 26px rgba(0,0,0,.35), 0 0 0 8px rgba(255,255,255,.08) inset;
     }
-    h2 { margin: 0 0 16px; font-weight: 700; letter-spacing:.3px; }
-    .tag { opacity:.85; margin-bottom: 22px; }
-    .row { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
-    button {
-      padding: 12px 26px; font-size: 16px; font-weight: 600; border:0; border-radius: 28px; cursor:pointer;
-      transition: transform .15s ease, box-shadow .2s ease, opacity .2s ease;
-    }
-    button:active { transform: scale(.98); }
-    .yes { background:#00c853; color:#fff; box-shadow:0 8px 24px rgba(0,200,83,.35); }
-    .no  { background:#e53935; color:#fff; box-shadow:0 8px 24px rgba(229,57,53,.35); }
-    .muted { opacity:.9; }
-    .spacer { height: 10px; }
-    #view-register { display:block; }
-    #view-confirm  { display:none; }
-
-    /* Referral copy box */
-    .ref-box {
-      display: flex; align-items: center; justify-content: center;
-      background: rgba(255,255,255,.1);
-      border-radius: 12px;
-      padding: 8px 12px;
-      gap: 8px;
+    h2 { margin: 0 0 10px; font-weight: 700; }
+    .row { margin:10px 0; font-size: 1.05rem; }
+    .label { opacity:.9; }
+    .big { font-size: 1.25rem; font-weight: 700; }
+    .ref-line {
+      display:flex; align-items:center; justify-content:center; gap:10px;
       margin-top: 8px;
     }
-    .ref-text {
-      flex: 1; font-size: 0.9rem; word-break: break-all;
-    }
     .copy-btn {
-      background: none; border: none; color: #fff; cursor: pointer;
-      font-size: 1.2rem; transition: opacity .2s;
+      display:inline-flex; align-items:center; justify-content:center;
+      width:36px; height:36px; border-radius:10px; border:none; cursor:pointer;
+      background: rgba(255,255,255,.16); color:#fff; font-size:18px;
+      transition: transform .12s ease, opacity .2s;
     }
-    .copy-btn:hover { opacity: .8; }
+    .copy-btn:active { transform: scale(.96); }
+    .hint { font-size:.85rem; opacity:.85; margin-top:8px; }
     .tooltip {
-      position: absolute;
-      background: rgba(0,0,0,.8);
-      color: #fff;
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      opacity: 0;
-      transition: opacity .3s;
-      pointer-events: none;
+      margin-top:8px; font-size:.85rem; opacity:0; transition:opacity .25s;
     }
+    .show { opacity:1; }
+    .actions { margin-top:16px; display:flex; gap:12px; justify-content:center; }
+    .btn {
+      padding:11px 22px; border-radius:22px; border:0; cursor:pointer; font-weight:600;
+      background:#00c853; color:#fff; box-shadow:0 8px 24px rgba(0,200,83,.35);
+    }
+    .btn.alt { background:#e53935; box-shadow:0 8px 24px rgba(229,57,53,.35); }
   </style>
 </head>
 <body>
-  <div class="card">
-
-    <!-- VIEW 1: Ask to register -->
-    <section id="view-register">
-      <img src="./Botlogo.png" alt="Ref786App Logo" class="logo" />
-      <h2>Do you want to Register?</h2>
-      <div class="tag">Smart Referral System</div>
-      <div class="row">
-        <button class="yes" id="yesBtn">✅ Yes</button>
-        <button class="no"  id="noBtn">❌ No</button>
-      </div>
-    </section>
-
-    <!-- VIEW 2: Confirmation (with copy icon) -->
-    <section id="view-confirm">
-      <h2>✅ Registered!</h2>
-      <div class="spacer"></div>
-      <div id="lines" class="muted" style="white-space:pre-line;"></div>
-      <div class="ref-box">
-        <div id="refLink" class="ref-text"></div>
-        <button id="copyBtn" class="copy-btn" title="Copy referral link">📋</button>
-      </div>
-      <div id="tooltip" class="tooltip">Copied!</div>
-    </section>
-
+  <div class="card" id="app">
+    <img src="./Botlogo.png" alt="Ref786App Logo" class="logo" />
+    <h2>Do you want to Register?</h2>
+    <div class="actions">
+      <button class="btn" id="yesBtn">✅ Yes</button>
+      <button class="btn alt" id="noBtn">❌ No</button>
+    </div>
   </div>
 
   <script>
     const tg = window.Telegram.WebApp;
-    tg.ready();
-    tg.expand();
+    tg.ready(); tg.expand();
 
-    const viewRegister = document.getElementById('view-register');
-    const viewConfirm  = document.getElementById('view-confirm');
-    const linesEl      = document.getElementById('lines');
-    const refEl        = document.getElementById('refLink');
-    const copyBtn      = document.getElementById('copyBtn');
-    const tooltip      = document.getElementById('tooltip');
+    const app = document.getElementById('app');
 
-    function showConfirm(id, username, name) {
-      const referral = `https://t.me/ref786bot?start=${id}`;
-      linesEl.innerHTML = `• Telegram ID: ${id}`;
-      refEl.textContent = referral;
-      viewRegister.style.display = 'none';
-      viewConfirm.style.display  = 'block';
+    function showConfirmation(userId, name) {
+      const referralUrl = `https://t.me/ref786bot?start=${userId}`;
+
+      app.innerHTML = `
+        <img src="./Botlogo.png" alt="Ref786App Logo" class="logo" />
+        <div class="row big" id="uid">${userId}</div>
+        <div class="row" id="uname">${name}</div>
+
+        <div class="row ref-line">
+          <span class="label">Referral Link</span>
+          <button class="copy-btn" id="copyBtn" title="Copy referral link">📋</button>
+        </div>
+        <div class="hint">Tap the copy icon to copy your referral link</div>
+        <div class="tooltip" id="tooltip">Copied!</div>
+      `;
+
+      // Copy handler
+      const copyBtn = document.getElementById('copyBtn');
+      const tooltip = document.getElementById('tooltip');
+      copyBtn.onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(referralUrl);
+          tooltip.classList.add('show');
+          setTimeout(() => tooltip.classList.remove('show'), 1200);
+          try { tg.HapticFeedback?.impactOccurred('medium'); } catch(e) {}
+        } catch (e) {
+          alert('Failed to copy link');
+        }
+      };
+
       try { tg.HapticFeedback?.notificationOccurred('success'); } catch(e) {}
     }
 
-    document.getElementById("yesBtn").onclick = () => {
+    document.getElementById('yesBtn').onclick = () => {
       const u = tg.initDataUnsafe?.user || {};
-      const id  = u.id ?? Math.floor(Math.random()*1000000000);
-      const username = u.username ?? '(not set)';
-      const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || '';
+      const id   = (u && u.id) ? u.id : Math.floor(Math.random()*1000000000);
+      const name = [u?.first_name, u?.last_name].filter(Boolean).join(' ') || (u?.username ? '@'+u.username : 'Unknown');
 
-      showConfirm(id, username, name);
+      // Show confirmation page inside the Mini App
+      showConfirmation(id, name);
+
+      // (Optional) If you also want to notify your bot silently, you can sendData here.
+      // NOTE: This may trigger a Telegram prompt if the user never started your bot chat.
+      // try { tg.sendData(JSON.stringify({ action: 'register', user_id: id, name })); } catch(e) {}
     };
 
-    document.getElementById("noBtn").onclick = () => {
-      viewRegister.innerHTML = '<h2>❌ Registration Cancelled.</h2>';
+    document.getElementById('noBtn').onclick = () => {
+      app.innerHTML = `
+        <img src="./Botlogo.png" alt="Ref786App Logo" class="logo" />
+        <div class="row big">❌ Registration Cancelled</div>
+      `;
       try { tg.HapticFeedback?.notificationOccurred('error'); } catch(e) {}
-    };
-
-    copyBtn.onclick = async () => {
-      const text = refEl.textContent.trim();
-      try {
-        await navigator.clipboard.writeText(text);
-        tooltip.style.opacity = 1;
-        setTimeout(() => { tooltip.style.opacity = 0; }, 1200);
-        try { tg.HapticFeedback?.impactOccurred('medium'); } catch(e) {}
-      } catch (err) {
-        alert("Failed to copy link");
-      }
     };
   </script>
 </body>
