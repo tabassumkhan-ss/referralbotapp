@@ -13,60 +13,44 @@
       text-align:center; color:#fff;
       background: radial-gradient(1200px 600px at 50% -20%, rgba(255,255,255,.08), transparent 60%),
                   linear-gradient(135deg, #5c3cff, #0e1630 60%);
-      overflow:hidden;
+      overflow:auto; padding: 18px;
     }
     .card {
-      width:min(560px, 92vw);
+      width:min(720px, 96vw);
       background: rgba(255,255,255,0.06);
       border: 1px solid rgba(255,255,255,0.15);
       border-radius: 20px;
-      padding: 28px 22px;
+      padding: 22px;
       box-shadow: 0 18px 50px rgba(0,0,0,.25);
       backdrop-filter: blur(6px);
+      margin: 0 auto;
     }
 
-    /* Base avatar style */
+    /* Avatar + glow */
     .logo {
       width: 88px; height: 88px; border-radius: 50%; object-fit: cover;
       border: 4px solid rgba(255,255,255,.35); margin: 0 auto 14px; display:block;
       box-shadow: 0 10px 26px rgba(0,0,0,.35), 0 0 0 8px rgba(255,255,255,.08) inset;
       position: relative;
     }
-
-    /* Neon glow ring for registered state */
-    .logo.glow {
-      border-color: transparent;
-      box-shadow: none;
-      isolation: isolate;
-    }
+    .logo.glow { border-color: transparent; box-shadow: none; isolation:isolate; }
     .logo.glow::before, .logo.glow::after {
-      content: ""; position: absolute; inset: -6px; border-radius: 50%;
-      z-index: -1;
+      content: ""; position: absolute; inset: -6px; border-radius: 50%; z-index: -1;
     }
-    /* Outer animated neon gradient ring */
     .logo.glow::before {
-      background: conic-gradient(
-        from 0deg,
-        #6cf 0%, #8af 25%, #9ff 50%, #7df 75%, #6cf 100%
-      );
-      filter: blur(6px);
-      animation: spin 4s linear infinite;
-      opacity: .95;
+      background: conic-gradient(from 0deg,#6cf 0%,#8af 25%,#9ff 50%,#7df 75%,#6cf 100%);
+      filter: blur(6px); animation: spin 4s linear infinite; opacity: .95;
     }
-    /* Inner soft glow halo */
     .logo.glow::after {
-      inset: -14px;
-      background: radial-gradient(closest-side, rgba(108,240,255,.5), rgba(0,0,0,0));
-      filter: blur(10px);
-      opacity: .65;
+      inset: -14px; background: radial-gradient(closest-side, rgba(108,240,255,.5), rgba(0,0,0,0));
+      filter: blur(10px); opacity: .65;
     }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     h2 { margin: 0 0 10px; font-weight: 700; }
     .row { margin:10px 0; font-size: 1.05rem; }
     .big { font-size: 1.25rem; font-weight: 700; }
+
     .actions { margin-top:16px; display:flex; gap:12px; justify-content:center; }
     .btn {
       padding:11px 22px; border-radius:22px; border:0; cursor:pointer; font-weight:600;
@@ -74,10 +58,7 @@
     }
     .btn.alt { background:#e53935; box-shadow:0 8px 24px rgba(229,57,53,.35); }
 
-    /* Referral line with copy icon */
-    .ref-line {
-      display:flex; align-items:center; justify-content:center; gap:10px; margin-top:8px;
-    }
+    .ref-line { display:flex; align-items:center; justify-content:center; gap:10px; margin-top:8px; }
     .copy-btn {
       display:inline-flex; align-items:center; justify-content:center;
       width:36px; height:36px; border-radius:10px; border:none; cursor:pointer;
@@ -88,10 +69,28 @@
     .hint { font-size:.85rem; opacity:.85; margin-top:8px; }
     .tooltip { margin-top:8px; font-size:.85rem; opacity:0; transition:opacity .25s; }
     .show { opacity:1; }
+
+    /* Deposit panel */
+    .panel { margin-top:18px; text-align:left; background:rgba(0,0,0,.18); padding:16px; border-radius:14px; }
+    .panel h3 { margin:0 0 10px; color:#fff; }
+    label { display:block; font-size:.95rem; opacity:.9; margin:10px 0 6px; }
+    input, .addr-box {
+      width:100%; padding:12px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.08); color:#fff; outline:none;
+    }
+    .split { display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:12px; }
+    .rowline { display:flex; align-items:center; gap:10px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; word-break: break-all; }
+    .mini { font-size:.9rem; opacity:.9; }
+    .submit { margin-top:14px; text-align:right; }
+    .btn.secondary { background:#2a7de1; box-shadow:0 8px 24px rgba(42,125,225,.35); }
+    .error { color:#ffb4b4; font-size:.9rem; margin-top:6px; }
+    .ok    { color:#b5ffcb; font-size:.9rem; margin-top:6px; }
   </style>
 </head>
 <body>
   <div class="card" id="app">
+    <!-- Initial register screen -->
     <img src="./Botlogo.png" alt="Ref786App Logo" class="logo" id="avatar" />
     <h2>Do you want to Register?</h2>
     <div class="actions">
@@ -101,48 +100,167 @@
   </div>
 
   <script>
-    const tg = window.Telegram.WebApp;
-    tg.ready(); tg.expand();
+    const tg = window.Telegram.WebApp; tg.ready(); tg.expand();
+
+    // === CONFIG: replace with your real deposit addresses ===
+    const ADDR_MUSD = "0xYOUR_MUSD_RECEIVE_ADDRESS_HERE";
+    const ADDR_MSTC = "0xYOUR_MSTC_RECEIVE_ADDRESS_HERE";
+    const CHAIN_LABEL = "EVM Chain"; // e.g., "MST Chain (EVM)" or "BSC"
 
     const app = document.getElementById('app');
     const baseLogo = './Botlogo.png';
 
-    function showConfirmation(userId, name, avatarUrl) {
+    function copyText(text, tooltipEl) {
+      navigator.clipboard.writeText(text).then(() => {
+        tooltipEl.classList.add('show');
+        setTimeout(() => tooltipEl.classList.remove('show'), 1200);
+        try { tg.HapticFeedback?.impactOccurred('medium'); } catch {}
+      }).catch(() => alert('Failed to copy'));
+    }
+
+    function fmt(n){ return Number(n).toFixed(2); }
+
+    // Render the confirmation + deposit panel
+    function renderRegisteredView(userId, name, avatarUrl) {
       const referralUrl = `https://t.me/ref786bot?start=${userId}`;
       app.innerHTML = `
         <img src="${avatarUrl || baseLogo}" alt="User Avatar" class="logo glow" />
-        <div class="row big" id="uid">${userId}</div>
-        <div class="row" id="uname">${name}</div>
+        <div class="row big">${userId}</div>
+        <div class="row">${name}</div>
 
         <div class="row ref-line">
           <span>Referral Link</span>
-          <button class="copy-btn" id="copyBtn" title="Copy referral link">📋</button>
+          <button class="copy-btn" id="copyRef" title="Copy referral link">📋</button>
         </div>
-        
-        <div class="tooltip" id="tooltip">Copied!</div>
+        <div class="hint">Tap to copy your referral link</div>
+        <div class="tooltip" id="tooltipRef">Copied!</div>
+
+        <div class="panel">
+          <h3>💳 Deposit</h3>
+          <div class="mini">Minimum deposit — <b>$20</b>. Split will be <b>50% MUSD</b> and <b>50% MSTC</b>.</div>
+
+          <label>Enter USD amount</label>
+          <input id="amt" type="number" min="20" step="0.01" placeholder="e.g., 20.00" />
+
+          <div id="amtErr" class="error" style="display:none;"></div>
+
+          <div class="split">
+            <div>
+              <div class="mini">MUSD (50%)</div>
+              <div class="rowline"><span id="musdAmt" class="big">0.00</span> <span class="mini">USD</span></div>
+              <label class="mini" style="margin-top:8px;">Send to (MUSD address)</label>
+              <div class="addr-box mono" id="addrMUSD">${ADDR_MUSD}</div>
+              <div class="rowline" style="margin-top:6px;">
+                <button class="copy-btn" id="copyMUSD">📋</button><span class="mini">${CHAIN_LABEL}</span>
+              </div>
+              <label class="mini" style="margin-top:8px;">MUSD Tx Hash</label>
+              <input id="txMUSD" type="text" placeholder="Paste transaction hash" />
+            </div>
+
+            <div>
+              <div class="mini">MSTC (50%)</div>
+              <div class="rowline"><span id="mstcAmt" class="big">0.00</span> <span class="mini">USD</span></div>
+              <label class="mini" style="margin-top:8px;">Send to (MSTC address)</label>
+              <div class="addr-box mono" id="addrMSTC">${ADDR_MSTC}</div>
+              <div class="rowline" style="margin-top:6px;">
+                <button class="copy-btn" id="copyMSTC">📋</button><span class="mini">${CHAIN_LABEL}</span>
+              </div>
+              <label class="mini" style="margin-top:8px;">MSTC Tx Hash</label>
+              <input id="txMSTC" type="text" placeholder="Paste transaction hash" />
+            </div>
+          </div>
+
+          <div class="submit">
+            <button class="btn secondary" id="submitDeposit">Submit Deposit</button>
+          </div>
+          <div id="submitMsg" class="ok" style="display:none;">Submitted! We’ll verify your transactions shortly.</div>
+        </div>
       `;
 
-      const copyBtn = document.getElementById('copyBtn');
-      const tooltip = document.getElementById('tooltip');
-      copyBtn.onclick = async () => {
-        try {
-          await navigator.clipboard.writeText(referralUrl);
-          tooltip.classList.add('show');
-          setTimeout(() => tooltip.classList.remove('show'), 1200);
-          tg.HapticFeedback?.impactOccurred('medium');
-        } catch { alert('Failed to copy link'); }
-      };
+      // Referral copy
+      const tooltipRef = document.getElementById('tooltipRef');
+      document.getElementById('copyRef').onclick = () => copyText(referralUrl, tooltipRef);
 
-      tg.HapticFeedback?.notificationOccurred('success');
+      // Amount logic
+      const amt = document.getElementById('amt');
+      const musdAmtEl = document.getElementById('musdAmt');
+      const mstcAmtEl = document.getElementById('mstcAmt');
+      const errEl = document.getElementById('amtErr');
+
+      function recalc() {
+        const v = parseFloat(amt.value || '0');
+        if (isNaN(v) || v <= 0) {
+          musdAmtEl.textContent = '0.00';
+          mstcAmtEl.textContent = '0.00';
+          errEl.style.display = 'none';
+          return;
+        }
+        musdAmtEl.textContent = fmt(v/2);
+        mstcAmtEl.textContent = fmt(v/2);
+        errEl.style.display = (v < 20) ? 'block' : 'none';
+        errEl.textContent = (v < 20) ? 'Minimum deposit is $20.' : '';
+      }
+      amt.addEventListener('input', recalc);
+
+      // Copy address buttons
+      document.getElementById('copyMUSD').onclick = () => copyText(ADDR_MUSD, mkTip());
+      document.getElementById('copyMSTC').onclick = () => copyText(ADDR_MSTC, mkTip());
+      function mkTip(){
+        const tip = document.createElement('div');
+        tip.className = 'tooltip show';
+        tip.textContent = 'Copied!';
+        app.appendChild(tip);
+        setTimeout(()=>{ tip.remove(); },1000);
+        return tip;
+      }
+
+      // Submit deposit — send to bot (if chat context exists)
+      document.getElementById('submitDeposit').onclick = () => {
+        const v = parseFloat(amt.value || '0');
+        const tx1 = document.getElementById('txMUSD').value.trim();
+        const tx2 = document.getElementById('txMSTC').value.trim();
+
+        if (isNaN(v) || v < 20) {
+          errEl.style.display = 'block';
+          errEl.textContent = 'Please enter at least $20.';
+          return;
+        }
+        if (!tx1 || !tx2) {
+          errEl.style.display = 'block';
+          errEl.textContent = 'Please paste both transaction hashes.';
+          return;
+        }
+
+        const payload = {
+          action: 'deposit_submitted',
+          user_id: userId,
+          name,
+          amount_usd: v,
+          musd_usd: v/2,
+          mstc_usd: v/2,
+          tx_musd: tx1,
+          tx_mstc: tx2
+        };
+
+        let sent = false;
+        try {
+          tg.sendData(JSON.stringify(payload)); // may pop a chooser if user never started the bot
+          sent = true;
+        } catch {}
+        document.getElementById('submitMsg').style.display = 'block';
+        try { tg.HapticFeedback?.notificationOccurred('success'); } catch {}
+        // Keep app open; or tg.close() if you want to jump to chat.
+      };
     }
 
+    // Register button behavior
     document.getElementById('yesBtn').onclick = () => {
       const u = tg.initDataUnsafe?.user || {};
       const id   = u.id ?? Math.floor(Math.random()*1000000000);
       const name = [u.first_name, u.last_name].filter(Boolean).join(' ')
                 || (u.username ? '@' + u.username : 'Unknown');
-      const avatarUrl = u.photo_url || baseLogo;  // Telegram may provide photo_url
-      showConfirmation(id, name, avatarUrl);
+      const avatarUrl = u.photo_url || baseLogo;
+      renderRegisteredView(id, name, avatarUrl);
     };
 
     document.getElementById('noBtn').onclick = () => {
@@ -150,9 +268,8 @@
         <img src="${baseLogo}" alt="Ref786App Logo" class="logo" />
         <div class="row big">❌ Registration Cancelled</div>
       `;
-      tg.HapticFeedback?.notificationOccurred('error');
+      try { tg.HapticFeedback?.notificationOccurred('error'); } catch {}
     };
   </script>
 </body>
 </html>
-
