@@ -47,39 +47,24 @@
   <div class="foot">Ref786App • Telegram Mini App</div>
 
   <script>
-    const tg = window.Telegram.WebApp;
-    tg.ready(); tg.expand();
-
-    function hasTelegramContext() {
-      // Must have signed initData and user object when opened from a chat/webview
-      return !!(tg.initData && tg.initDataUnsafe && tg.initDataUnsafe.user);
-    }
+    const tg = window.Telegram?.WebApp;
+    tg?.ready(); tg?.expand();
 
     document.getElementById("yesBtn").onclick = () => {
-      if (!hasTelegramContext()) {
-        // No chat context → open the bot chat so the bot can reply immediately
+      if (tg?.openTelegramLink) {
         tg.openTelegramLink("https://t.me/ref786bot?start=register");
-        return;
+        tg.close?.();
+      } else {
+        window.location.href = "https://t.me/ref786bot?start=register";
       }
-      const u = tg.initDataUnsafe.user || {};
-      const payload = {
-        action: "register",
-        user_id: u.id ?? null,
-        username: u.username ?? null,
-        first_name: u.first_name ?? null,
-        last_name: u.last_name ?? null,
-        start_param: tg.initDataUnsafe?.start_param ?? null
-      };
-      tg.sendData(JSON.stringify(payload)); // goes to your bot chat
-      tg.close(); // show the bot's reply immediately
     };
 
     document.getElementById("noBtn").onclick = () => {
-      if (hasTelegramContext()) {
-        tg.sendData(JSON.stringify({ action: "cancel" }));
-        tg.close();
-      } else {
+      if (tg?.openTelegramLink) {
         tg.openTelegramLink("https://t.me/ref786bot");
+        tg.close?.();
+      } else {
+        window.location.href = "https://t.me/ref786bot";
       }
     };
   </script>
