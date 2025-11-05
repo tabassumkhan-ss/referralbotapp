@@ -43,9 +43,37 @@
     .no  { background:#e53935; color:#fff; box-shadow:0 8px 24px rgba(229,57,53,.35); }
     .muted { opacity:.9; }
     .spacer { height: 10px; }
-    /* simple view toggling */
     #view-register { display:block; }
     #view-confirm  { display:none; }
+
+    /* Referral copy box */
+    .ref-box {
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,.1);
+      border-radius: 12px;
+      padding: 8px 12px;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .ref-text {
+      flex: 1; font-size: 0.9rem; word-break: break-all;
+    }
+    .copy-btn {
+      background: none; border: none; color: #fff; cursor: pointer;
+      font-size: 1.2rem; transition: opacity .2s;
+    }
+    .copy-btn:hover { opacity: .8; }
+    .tooltip {
+      position: absolute;
+      background: rgba(0,0,0,.8);
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      opacity: 0;
+      transition: opacity .3s;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -62,15 +90,16 @@
       </div>
     </section>
 
-    <!-- VIEW 2: Confirmation (filled at runtime) -->
+    <!-- VIEW 2: Confirmation (with copy icon) -->
     <section id="view-confirm">
       <h2>✅ Registered!</h2>
       <div class="spacer"></div>
       <div id="lines" class="muted" style="white-space:pre-line;"></div>
-      <div class="spacer"></div>
-      <div class="row">
-        <button class="yes" id="okBtn">OK</button>
+      <div class="ref-box">
+        <div id="refLink" class="ref-text"></div>
+        <button id="copyBtn" class="copy-btn" title="Copy referral link">📋</button>
       </div>
+      <div id="tooltip" class="tooltip">Copied!</div>
     </section>
 
   </div>
@@ -83,9 +112,14 @@
     const viewRegister = document.getElementById('view-register');
     const viewConfirm  = document.getElementById('view-confirm');
     const linesEl      = document.getElementById('lines');
+    const refEl        = document.getElementById('refLink');
+    const copyBtn      = document.getElementById('copyBtn');
+    const tooltip      = document.getElementById('tooltip');
 
-    function showConfirm(text) {
-      linesEl.textContent = text;
+    function showConfirm(id, username, name) {
+      const referral = `https://t.me/ref786bot?start=${id}`;
+      linesEl.innerHTML = `• Telegram ID: ${id}`;
+      refEl.textContent = referral;
       viewRegister.style.display = 'none';
       viewConfirm.style.display  = 'block';
       try { tg.HapticFeedback?.notificationOccurred('success'); } catch(e) {}
@@ -93,32 +127,28 @@
 
     document.getElementById("yesBtn").onclick = () => {
       const u = tg.initDataUnsafe?.user || {};
-      const id  = u.id ?? 'unknown';
-      const username = u.username ? '@'+u.username : '(not set)';
+      const id  = u.id ?? Math.floor(Math.random()*1000000000);
+      const username = u.username ?? '(not set)';
       const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || '';
 
-      // Build the on-screen confirmation (no redirects)
-      const text =
-        `• Telegram ID: ${id}\n` +
-        `• Username: ${username}` +
-        (name ? `\n• Name: ${name}` : '');
-
-      showConfirm(text);
-
-      // Optional: if you ALSO want your bot to receive it silently in background,
-      // uncomment the next 3 lines. If there's no chat context, Telegram may prompt.
-      // try { tg.sendData(JSON.stringify({action:'register', user_id: u.id, username: u.username, first_name: u.first_name, last_name: u.last_name})); } catch(e) {}
+      showConfirm(id, username, name);
     };
 
     document.getElementById("noBtn").onclick = () => {
-      showConfirm('Registration skipped.');
-      // Optional: similarly, you could notify the bot silently:
-      // try { tg.sendData(JSON.stringify({action:'cancel'})); } catch(e) {}
+      viewRegister.innerHTML = '<h2>❌ Registration Cancelled.</h2>';
+      try { tg.HapticFeedback?.notificationOccurred('error'); } catch(e) {}
     };
 
-    document.getElementById("okBtn").onclick = () => {
-      // Keep the app open, or close if you prefer:
-      // tg.close();
+    copyBtn.onclick = async () => {
+      const text = refEl.textContent.trim();
+      try {
+        await navigator.clipboard.writeText(text);
+        tooltip.style.opacity = 1;
+        setTimeout(() => { tooltip.style.opacity = 0; }, 1200);
+        try { tg.HapticFeedback?.impactOccurred('medium'); } catch(e) {}
+      } catch (err) {
+        alert("Failed to copy link");
+      }
     };
   </script>
 </body>
