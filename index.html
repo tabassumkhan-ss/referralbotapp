@@ -9,63 +9,116 @@
     :root { --pad:20px; }
     * { box-sizing: border-box; }
     body {
-      margin:0; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      margin:0; height:100vh; display:flex; align-items:center; justify-content:center;
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
       text-align:center; color:#fff;
       background: radial-gradient(1200px 600px at 50% -20%, rgba(255,255,255,.08), transparent 60%),
                   linear-gradient(135deg, #5c3cff, #0e1630 60%);
+      overflow:hidden;
+    }
+    .card {
+      width:min(560px, 92vw);
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.25);
+      backdrop-filter: blur(6px);
     }
     .logo {
-      width: 128px; height: 128px; border-radius: 50%;
+      width: 110px; height: 110px; border-radius: 50%;
       border: 4px solid rgba(255,255,255,.5);
       box-shadow: 0 12px 30px rgba(0,0,0,.35), 0 0 0 8px rgba(255,255,255,.08) inset;
-      object-fit: cover; margin-bottom: 18px;
+      object-fit: cover; margin-bottom: 16px;
     }
-    h2 { margin: 0 0 18px; font-weight: 700; letter-spacing:.3px; }
-    .tag { opacity:.85; margin-bottom: 26px; }
-    .row { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; }
+    h2 { margin: 0 0 16px; font-weight: 700; letter-spacing:.3px; }
+    .tag { opacity:.85; margin-bottom: 22px; }
+    .row { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
     button {
-      padding: 12px 28px; font-size: 16px; font-weight: 600; border:0; border-radius: 28px; cursor:pointer;
+      padding: 12px 26px; font-size: 16px; font-weight: 600; border:0; border-radius: 28px; cursor:pointer;
       transition: transform .15s ease, box-shadow .2s ease, opacity .2s ease;
     }
     button:active { transform: scale(.98); }
     .yes { background:#00c853; color:#fff; box-shadow:0 8px 24px rgba(0,200,83,.35); }
     .no  { background:#e53935; color:#fff; box-shadow:0 8px 24px rgba(229,57,53,.35); }
-    .foot { position:fixed; bottom:14px; left:0; right:0; opacity:.75; font-size:.9rem; }
+    .muted { opacity:.9; }
+    .spacer { height: 10px; }
+    /* simple view toggling */
+    #view-register { display:block; }
+    #view-confirm  { display:none; }
   </style>
 </head>
 <body>
-  <img src="./Botlogo.png" alt="Ref786App Logo" class="logo" />
-  <h2>Do you want to Register?</h2>
-  <div class="tag">Smart Referral System</div>
+  <div class="card">
 
-  <div class="row">
-    <button class="yes" id="yesBtn">✅ Yes</button>
-    <button class="no"  id="noBtn">❌ No</button>
+    <!-- VIEW 1: Ask to register -->
+    <section id="view-register">
+      <img src="./Botlogo.png" alt="Ref786App Logo" class="logo" />
+      <h2>Do you want to Register?</h2>
+      <div class="tag">Smart Referral System</div>
+      <div class="row">
+        <button class="yes" id="yesBtn">✅ Yes</button>
+        <button class="no"  id="noBtn">❌ No</button>
+      </div>
+    </section>
+
+    <!-- VIEW 2: Confirmation (filled at runtime) -->
+    <section id="view-confirm">
+      <h2>✅ Registered!</h2>
+      <div class="spacer"></div>
+      <div id="lines" class="muted" style="white-space:pre-line;"></div>
+      <div class="spacer"></div>
+      <div class="row">
+        <button class="yes" id="okBtn">OK</button>
+      </div>
+    </section>
+
   </div>
 
-  <div class="foot">Ref786App • Telegram Mini App</div>
-
   <script>
-    const tg = window.Telegram?.WebApp;
-    tg?.ready(); tg?.expand();
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+
+    const viewRegister = document.getElementById('view-register');
+    const viewConfirm  = document.getElementById('view-confirm');
+    const linesEl      = document.getElementById('lines');
+
+    function showConfirm(text) {
+      linesEl.textContent = text;
+      viewRegister.style.display = 'none';
+      viewConfirm.style.display  = 'block';
+      try { tg.HapticFeedback?.notificationOccurred('success'); } catch(e) {}
+    }
 
     document.getElementById("yesBtn").onclick = () => {
-      if (tg?.openTelegramLink) {
-        tg.openTelegramLink("https://t.me/ref786bot?start=register");
-        tg.close?.();
-      } else {
-        window.location.href = "https://t.me/ref786bot?start=register";
-      }
+      const u = tg.initDataUnsafe?.user || {};
+      const id  = u.id ?? 'unknown';
+      const username = u.username ? '@'+u.username : '(not set)';
+      const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || '';
+
+      // Build the on-screen confirmation (no redirects)
+      const text =
+        `• Telegram ID: ${id}\n` +
+        `• Username: ${username}` +
+        (name ? `\n• Name: ${name}` : '');
+
+      showConfirm(text);
+
+      // Optional: if you ALSO want your bot to receive it silently in background,
+      // uncomment the next 3 lines. If there's no chat context, Telegram may prompt.
+      // try { tg.sendData(JSON.stringify({action:'register', user_id: u.id, username: u.username, first_name: u.first_name, last_name: u.last_name})); } catch(e) {}
     };
 
     document.getElementById("noBtn").onclick = () => {
-      if (tg?.openTelegramLink) {
-        tg.openTelegramLink("https://t.me/ref786bot");
-        tg.close?.();
-      } else {
-        window.location.href = "https://t.me/ref786bot";
-      }
+      showConfirm('Registration skipped.');
+      // Optional: similarly, you could notify the bot silently:
+      // try { tg.sendData(JSON.stringify({action:'cancel'})); } catch(e) {}
+    };
+
+    document.getElementById("okBtn").onclick = () => {
+      // Keep the app open, or close if you prefer:
+      // tg.close();
     };
   </script>
 </body>
