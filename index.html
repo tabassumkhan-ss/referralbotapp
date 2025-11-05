@@ -59,7 +59,7 @@
 </head>
 <body>
   <div class="card" id="app">
-    <img src="./Botlogo.png" alt="Ref786App Logo" class="logo" />
+    <img src="./Botlogo.png" alt="Ref786App Logo" class="logo" id="avatar" />
     <h2>Do you want to Register?</h2>
     <div class="actions">
       <button class="btn" id="yesBtn">✅ Yes</button>
@@ -72,12 +72,13 @@
     tg.ready(); tg.expand();
 
     const app = document.getElementById('app');
+    const avatar = document.getElementById('avatar');
 
-    function showConfirmation(userId, name) {
+    function showConfirmation(userId, name, avatarUrl) {
       const referralUrl = `https://t.me/ref786bot?start=${userId}`;
 
       app.innerHTML = `
-        <img src="./Botlogo.png" alt="Ref786App Logo" class="logo" />
+        <img src="${avatarUrl || './Botlogo.png'}" alt="User Avatar" class="logo" />
         <div class="row big" id="uid">${userId}</div>
         <div class="row" id="uname">${name}</div>
 
@@ -89,34 +90,30 @@
         <div class="tooltip" id="tooltip">Copied!</div>
       `;
 
-      // Copy handler
       const copyBtn = document.getElementById('copyBtn');
       const tooltip = document.getElementById('tooltip');
+
       copyBtn.onclick = async () => {
         try {
           await navigator.clipboard.writeText(referralUrl);
           tooltip.classList.add('show');
           setTimeout(() => tooltip.classList.remove('show'), 1200);
-          try { tg.HapticFeedback?.impactOccurred('medium'); } catch(e) {}
-        } catch (e) {
+          tg.HapticFeedback?.impactOccurred('medium');
+        } catch {
           alert('Failed to copy link');
         }
       };
 
-      try { tg.HapticFeedback?.notificationOccurred('success'); } catch(e) {}
+      tg.HapticFeedback?.notificationOccurred('success');
     }
 
     document.getElementById('yesBtn').onclick = () => {
       const u = tg.initDataUnsafe?.user || {};
-      const id   = (u && u.id) ? u.id : Math.floor(Math.random()*1000000000);
-      const name = [u?.first_name, u?.last_name].filter(Boolean).join(' ') || (u?.username ? '@'+u.username : 'Unknown');
+      const id = u.id ?? Math.floor(Math.random()*1000000000);
+      const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || (u.username ? '@' + u.username : 'Unknown');
+      const avatarUrl = u.photo_url || './Botlogo.png'; // fallback if Telegram doesn’t provide photo
 
-      // Show confirmation page inside the Mini App
-      showConfirmation(id, name);
-
-      // (Optional) If you also want to notify your bot silently, you can sendData here.
-      // NOTE: This may trigger a Telegram prompt if the user never started your bot chat.
-      // try { tg.sendData(JSON.stringify({ action: 'register', user_id: id, name })); } catch(e) {}
+      showConfirmation(id, name, avatarUrl);
     };
 
     document.getElementById('noBtn').onclick = () => {
@@ -124,7 +121,7 @@
         <img src="./Botlogo.png" alt="Ref786App Logo" class="logo" />
         <div class="row big">❌ Registration Cancelled</div>
       `;
-      try { tg.HapticFeedback?.notificationOccurred('error'); } catch(e) {}
+      tg.HapticFeedback?.notificationOccurred('error');
     };
   </script>
 </body>
