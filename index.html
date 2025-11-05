@@ -6,118 +6,69 @@
   <title>Ref786App — Smart Referral System</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    /* Global page styling */
+    :root { --pad:20px; }
+    * { box-sizing: border-box; }
     body {
-      margin: 0;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-family: "Segoe UI", Roboto, sans-serif;
-      text-align: center;
-      background: linear-gradient(135deg, #4b6cb7, #182848); /* Blue gradient */
-      color: white;
-      overflow: hidden;
+      margin:0; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      text-align:center; color:#fff;
+      background: radial-gradient(1200px 600px at 50% -20%, rgba(255,255,255,.08), transparent 60%),
+                  linear-gradient(135deg, #5c3cff, #0e1630 60%);
     }
-
-    /* Logo styling */
     .logo {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      margin-bottom: 25px;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-      border: 3px solid rgba(255, 255, 255, 0.5);
-      object-fit: cover;
+      width: 128px; height: 128px; border-radius: 50%;
+      border: 4px solid rgba(255,255,255,.5);
+      box-shadow: 0 12px 30px rgba(0,0,0,.35), 0 0 0 8px rgba(255,255,255,.08) inset;
+      object-fit: cover; margin-bottom: 18px;
     }
-
-    /* Heading text */
-    h2 {
-      font-size: 1.5rem;
-      margin-bottom: 30px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-    }
-
-    /* Button layout */
-    .btn-row {
-      display: flex;
-      gap: 25px;
-      justify-content: center;
-    }
-
-    /* Button styling */
+    h2 { margin: 0 0 18px; font-weight: 700; letter-spacing:.3px; }
+    .tag { opacity:.85; margin-bottom: 26px; }
+    .row { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; }
     button {
-      padding: 14px 36px;
-      font-size: 16px;
-      font-weight: 600;
-      border-radius: 30px;
-      border: none;
-      cursor: pointer;
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      padding: 12px 28px; font-size: 16px; font-weight: 600; border:0; border-radius: 28px; cursor:pointer;
+      transition: transform .15s ease, box-shadow .2s ease, opacity .2s ease;
     }
-
-    button:active {
-      transform: scale(0.97);
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-    }
-
-    .yes {
-      background: #00c853;
-      color: #fff;
-      box-shadow: 0 6px 18px rgba(0, 200, 83, 0.4);
-    }
-
-    .no {
-      background: #e53935;
-      color: #fff;
-      box-shadow: 0 6px 18px rgba(229, 57, 53, 0.4);
-    }
-
-    /* Footer text */
-    .footer {
-      position: absolute;
-      bottom: 16px;
-      font-size: 0.85rem;
-      opacity: 0.8;
-    }
+    button:active { transform: scale(.98); }
+    .yes { background:#00c853; color:#fff; box-shadow:0 8px 24px rgba(0,200,83,.35); }
+    .no  { background:#e53935; color:#fff; box-shadow:0 8px 24px rgba(229,57,53,.35); }
+    .foot { position:fixed; bottom:14px; left:0; right:0; opacity:.75; font-size:.9rem; }
   </style>
 </head>
 <body>
-  <!-- Logo (replace with your hosted logo URL) -->
+  <!-- Use your repo-hosted logo -->
   <img src="./Botlogo.png" alt="Ref786App Logo" class="logo" />
 
-  <!-- Main text -->
   <h2>Do you want to Register?</h2>
+  <div class="tag">Smart Referral System</div>
 
-  <!-- Buttons -->
-  <div class="btn-row">
+  <div class="row">
     <button class="yes" id="yesBtn">✅ Yes</button>
-    <button class="no" id="noBtn">❌ No</button>
+    <button class="no"  id="noBtn">❌ No</button>
   </div>
 
-  <div class="footer">Ref786App — Smart Referral System</div>
+  <div class="foot">Ref786App • Telegram Mini App</div>
 
   <script>
     const tg = window.Telegram.WebApp;
     tg.ready();
     tg.expand();
 
-    // Handle Yes button
+    // YES → send user info to bot as WebAppData, then close
     document.getElementById("yesBtn").onclick = () => {
-      const user = tg.initDataUnsafe?.user;
-      tg.sendData(JSON.stringify({
+      const u = tg.initDataUnsafe?.user || {};
+      const payload = {
         action: "register",
-        user_id: user?.id,
-        username: user?.username,
-        first_name: user?.first_name,
-        last_name: user?.last_name
-      }));
+        user_id: u.id ?? null,
+        username: u.username ?? null,
+        first_name: u.first_name ?? null,
+        last_name: u.last_name ?? null,
+        start_param: tg.initDataUnsafe?.start_param ?? null
+      };
+      tg.sendData(JSON.stringify(payload));
       tg.close();
     };
 
-    // Handle No button
+    // NO → notify bot / close
     document.getElementById("noBtn").onclick = () => {
       tg.sendData(JSON.stringify({ action: "cancel" }));
       tg.close();
@@ -125,6 +76,3 @@
   </script>
 </body>
 </html>
-
-
-
