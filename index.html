@@ -13,7 +13,7 @@
       text-align:center; color:#fff;
       background: radial-gradient(1200px 600px at 50% -20%, rgba(255,255,255,.08), transparent 60%),
                   linear-gradient(135deg, #5c3cff, #0e1630 60%);
-      overflow:auto; padding:18px;
+      overflow:auto; padding: 18px;
     }
     .card {
       width:min(720px, 96vw);
@@ -26,6 +26,7 @@
       margin: 0 auto;
     }
 
+    /* Avatar + glow */
     .logo {
       width: 88px; height: 88px; border-radius: 50%; object-fit: cover;
       border: 4px solid rgba(255,255,255,.35); margin: 0 auto 14px; display:block;
@@ -46,9 +47,9 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    h2 { margin:0 0 10px; font-weight:700; }
-    .row { margin:10px 0; font-size:1.05rem; }
-    .big { font-size:1.25rem; font-weight:700; }
+    h2 { margin: 0 0 10px; font-weight: 700; }
+    .row { margin:10px 0; font-size: 1.05rem; }
+    .big { font-size: 1.25rem; font-weight: 700; }
 
     .actions { margin-top:16px; display:flex; gap:12px; justify-content:center; }
     .btn {
@@ -69,6 +70,7 @@
     .tooltip { margin-top:8px; font-size:.85rem; opacity:0; transition:opacity .25s; }
     .show { opacity:1; }
 
+    /* Deposit panel */
     .panel { margin-top:18px; text-align:left; background:rgba(0,0,0,.18); padding:16px; border-radius:14px; }
     .panel h3 { margin:0 0 10px; color:#fff; }
     label { display:block; font-size:.95rem; opacity:.9; margin:10px 0 6px; }
@@ -76,7 +78,7 @@
       width:100%; padding:12px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.18);
       background: rgba(255,255,255,.08); color:#fff; outline:none;
     }
-    .split { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
+    .split { display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:12px; }
     .rowline { display:flex; align-items:center; gap:10px; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; word-break: break-all; }
     .mini { font-size:.9rem; opacity:.9; }
@@ -88,6 +90,7 @@
 </head>
 <body>
   <div class="card" id="app">
+    <!-- Initial register screen -->
     <img src="./Botlogo.png" alt="Ref786App Logo" class="logo" id="avatar" />
     <h2>Do you want to Register?</h2>
     <div class="actions">
@@ -98,113 +101,180 @@
 
   <script>
     const tg = window.Telegram.WebApp; tg.ready(); tg.expand();
+
+    // === CONFIG: replace with your real deposit addresses ===
+    const ADDR_MUSD = "0x7e6916Af95714BE309cF3eee98149074921D93e0";
+    const ADDR_MSTC = "0x7e6916Af95714BE309cF3eee98149074921D93e0";
+    const CHAIN_LABEL = "EVM Chain"; // e.g., "MST Chain (EVM)" or "BSC"
+
     const app = document.getElementById('app');
     const baseLogo = './Botlogo.png';
 
-    // ---- replace these with your real wallets ----
-    const ADDR_MUSD = "0x7e6916Af95714BE309cF3eee98149074921D93e0";
-    const ADDR_MSTC = "0x7e6916Af95714BE309cF3eee98149074921D93e0";
-    const CHAIN_LABEL = "EVM Chain";
-
-    // ---- context + storage helpers ----
-    function hasContext() {
-      return !!(tg.initData && tg.initDataUnsafe && tg.initDataUnsafe.user);
+    function copyText(text, tooltipEl) {
+      navigator.clipboard.writeText(text).then(() => {
+        tooltipEl.classList.add('show');
+        setTimeout(() => tooltipEl.classList.remove('show'), 1200);
+        try { tg.HapticFeedback?.impactOccurred('medium'); } catch {}
+      }).catch(() => alert('Failed to copy'));
     }
-    function savePendingPayload(k,d){try{localStorage.setItem(k,JSON.stringify(d));}catch{}}
-    function loadPendingPayload(k){try{return JSON.parse(localStorage.getItem(k)||"null");}catch{return null;}}
-    function clearPendingPayload(k){try{localStorage.removeItem(k);}catch{}}
 
-    // Auto resume if reopened from bot chat
-    (function autoResume(){
-      const p=loadPendingPayload("pending_deposit");
-      if(p && hasContext()){
-        try{tg.sendData(JSON.stringify(p));}catch{}
-        clearPendingPayload("pending_deposit");
-        tg.close();
-      }
-    })();
+    function fmt(n){ return Number(n).toFixed(2); }
 
-    function copyText(txt,tip){navigator.clipboard.writeText(txt).then(()=>{tip.classList.add('show');setTimeout(()=>tip.classList.remove('show'),1200);}).catch(()=>alert('Copy failed'));}
+    // Render the confirmation + deposit panel
+    function renderRegisteredView(userId, name, avatarUrl) {
+      const referralUrl = `https://t.me/ref786bot?start=${userId}`;
+      app.innerHTML = `
+        <img src="${avatarUrl || baseLogo}" alt="User Avatar" class="logo glow" />
+        <div class="row big">${userId}</div>
+        <div class="row">${name}</div>
 
-    function fmt(n){return Number(n).toFixed(2);}
-
-    function renderRegisteredView(uid,name,avatar){
-      const ref=`https://t.me/ref786bot?start=${uid}`;
-      app.innerHTML=`
-        <img src="${avatar||baseLogo}" class="logo glow" />
-        <div class="row big">${uid??'(unknown)'}</div>
-        <div class="row">${name||'Unknown'}</div>
         <div class="row ref-line">
-          <span>Referral Link</span><button class="copy-btn" id="copyRef">📋</button>
+          <span>Referral Link</span>
+          <button class="copy-btn" id="copyRef" title="Copy referral link">📋</button>
         </div>
-        <div class="hint">Tap to copy your referral link</div>
-        <div class="tooltip" id="tipRef">Copied!</div>
+       
+        <div class="tooltip" id="tooltipRef">Copied!</div>
+
         <div class="panel">
           <h3>💳 Deposit</h3>
-          <div class="mini">Minimum deposit — <b>$20</b>. Split 50% MUSD / 50% MSTC.</div>
+          <div class="mini">Minimum deposit — <b>$20</b>. Split will be <b>50% MUSD</b> and <b>50% MSTC</b>.</div>
+
           <label>Enter USD amount</label>
           <input id="amt" type="number" min="20" step="0.01" placeholder="e.g., 20.00" />
-          <div id="err" class="error" style="display:none;"></div>
+
+          <div id="amtErr" class="error" style="display:none;"></div>
+
           <div class="split">
             <div>
               <div class="mini">MUSD (50%)</div>
-              <div class="rowline"><span id="musdAmt" class="big">0.00</span><span class="mini">USD</span></div>
-              <label class="mini">Send to (MUSD address)</label>
-              <div class="addr-box mono">${ADDR_MUSD}</div>
+              <div class="rowline"><span id="musdAmt" class="big">0.00</span> <span class="mini">USD</span></div>
+              <label class="mini" style="margin-top:8px;">Send to (MUSD address)</label>
+              <div class="addr-box mono" id="addrMUSD">${ADDR_MUSD}</div>
               <div class="rowline" style="margin-top:6px;">
                 <button class="copy-btn" id="copyMUSD">📋</button><span class="mini">${CHAIN_LABEL}</span>
               </div>
-              <label class="mini">MUSD Tx Hash</label>
+              <label class="mini" style="margin-top:8px;">MUSD Tx Hash</label>
               <input id="txMUSD" type="text" placeholder="Paste transaction hash" />
             </div>
+
             <div>
               <div class="mini">MSTC (50%)</div>
-              <div class="rowline"><span id="mstcAmt" class="big">0.00</span><span class="mini">USD</span></div>
-              <label class="mini">Send to (MSTC address)</label>
-              <div class="addr-box mono">${ADDR_MSTC}</div>
+              <div class="rowline"><span id="mstcAmt" class="big">0.00</span> <span class="mini">USD</span></div>
+              <label class="mini" style="margin-top:8px;">Send to (MSTC address)</label>
+              <div class="addr-box mono" id="addrMSTC">${ADDR_MSTC}</div>
               <div class="rowline" style="margin-top:6px;">
                 <button class="copy-btn" id="copyMSTC">📋</button><span class="mini">${CHAIN_LABEL}</span>
               </div>
-              <label class="mini">MSTC Tx Hash</label>
+              <label class="mini" style="margin-top:8px;">MSTC Tx Hash</label>
               <input id="txMSTC" type="text" placeholder="Paste transaction hash" />
             </div>
           </div>
-          <div class="submit"><button class="btn secondary" id="submitDeposit">Submit Deposit</button></div>
+
+          <div class="submit">
+            <button class="btn secondary" id="submitDeposit">Submit Deposit</button>
+          </div>
           <div id="submitMsg" class="ok" style="display:none;">Submitted! We’ll verify your transactions shortly.</div>
-        </div>`;
-      const tip=document.getElementById('tipRef');
-      document.getElementById('copyRef').onclick=()=>copyText(ref,tip);
+        </div>
+      `;
 
-      const amt=document.getElementById('amt'),musd=document.getElementById('musdAmt'),mstc=document.getElementById('mstcAmt'),err=document.getElementById('err');
-      amt.oninput=()=>{const v=parseFloat(amt.value||'0');if(isNaN(v)||v<=0){musd.textContent='0.00';mstc.textContent='0.00';err.style.display='none';return;}musd.textContent=fmt(v/2);mstc.textContent=fmt(v/2);err.style.display=v<20?'block':'none';err.textContent=v<20?'Minimum deposit is $20.':'';};
-      document.getElementById('copyMUSD').onclick=()=>copyText(ADDR_MUSD,tip);
-      document.getElementById('copyMSTC').onclick=()=>copyText(ADDR_MSTC,tip);
+      // Referral copy
+      const tooltipRef = document.getElementById('tooltipRef');
+      document.getElementById('copyRef').onclick = () => copyText(referralUrl, tooltipRef);
 
-      document.getElementById('submitDeposit').onclick=()=>{
-        const v=parseFloat(amt.value||'0'),tx1=document.getElementById('txMUSD').value.trim(),tx2=document.getElementById('txMSTC').value.trim();
-        const msg=document.getElementById('submitMsg');
-        if(isNaN(v)||v<20){err.style.display='block';err.textContent='Please enter at least $20.';return;}
-        if(!tx1||!tx2){err.style.display='block';err.textContent='Please paste both transaction hashes.';return;}
-        const u=tg.initDataUnsafe?.user||{};
-        const payload={action:'deposit_submitted',user_id:u.id??null,name:[u.first_name,u.last_name].filter(Boolean).join(' ')||(u.username?'@'+u.username:'Unknown'),amount_usd:v,musd_usd:v/2,mstc_usd:v/2,tx_musd:tx1,tx_mstc:tx2};
-        savePendingPayload("pending_deposit",payload);
-        msg.style.display='block';
-        const link="https://t.me/ref786bot?start=resume_deposit";
-        if(tg.openTelegramLink) tg.openTelegramLink(link); else window.location.href=link;
+      // Amount logic
+      const amt = document.getElementById('amt');
+      const musdAmtEl = document.getElementById('musdAmt');
+      const mstcAmtEl = document.getElementById('mstcAmt');
+      const errEl = document.getElementById('amtErr');
+
+      function recalc() {
+        const v = parseFloat(amt.value || '0');
+        if (isNaN(v) || v <= 0) {
+          musdAmtEl.textContent = '0.00';
+          mstcAmtEl.textContent = '0.00';
+          errEl.style.display = 'none';
+          return;
+        }
+        musdAmtEl.textContent = fmt(v/2);
+        mstcAmtEl.textContent = fmt(v/2);
+        errEl.style.display = (v < 20) ? 'block' : 'none';
+        errEl.textContent = (v < 20) ? 'Minimum deposit is $20.' : '';
+      }
+      amt.addEventListener('input', recalc);
+
+      // Copy address buttons
+      document.getElementById('copyMUSD').onclick = () => copyText(ADDR_MUSD, mkTip());
+      document.getElementById('copyMSTC').onclick = () => copyText(ADDR_MSTC, mkTip());
+      function mkTip(){
+        const tip = document.createElement('div');
+        tip.className = 'tooltip show';
+        tip.textContent = 'Copied!';
+        app.appendChild(tip);
+        setTimeout(()=>{ tip.remove(); },1000);
+        return tip;
+      }
+
+      // Submit deposit — send to bot (if chat context exists)
+      document.getElementById('submitDeposit').onclick = () => {
+        const v = parseFloat(amt.value || '0');
+        const tx1 = document.getElementById('txMUSD').value.trim();
+        const tx2 = document.getElementById('txMSTC').value.trim();
+
+        if (isNaN(v) || v < 20) {
+          errEl.style.display = 'block';
+          errEl.textContent = 'Please enter at least $20.';
+          return;
+        }
+        if (!tx1 || !tx2) {
+          errEl.style.display = 'block';
+          errEl.textContent = 'Please paste both transaction hashes.';
+          return;
+        }
+
+        const payload = {
+          action: 'deposit_submitted',
+          user_id: userId,
+          name,
+          amount_usd: v,
+          musd_usd: v/2,
+          mstc_usd: v/2,
+          tx_musd: tx1,
+          tx_mstc: tx2
+        };
+
+        let sent = false;
+        try {
+          tg.sendData(JSON.stringify(payload)); // may pop a chooser if user never started the bot
+          sent = true;
+        } catch {}
+        document.getElementById('submitMsg').style.display = 'block';
+        try { tg.HapticFeedback?.notificationOccurred('success'); } catch {}
+        // Keep app open; or tg.close() if you want to jump to chat.
       };
     }
 
-    document.getElementById('yesBtn').onclick=()=>{
-      const u=tg.initDataUnsafe?.user||{};
-      const id=u.id??null;
-      const name=[u.first_name,u.last_name].filter(Boolean).join(' ')||(u.username?'@'+u.username:'Unknown');
-      const avatar=u.photo_url||baseLogo;
-      renderRegisteredView(id,name,avatar);
+    // Register button behavior
+    document.getElementById('yesBtn').onclick = () => {
+      const u = tg.initDataUnsafe?.user || {};
+      const id   = u.id ?? Math.floor(Math.random()*1000000000);
+      const name = [u.first_name, u.last_name].filter(Boolean).join(' ')
+                || (u.username ? '@' + u.username : 'Unknown');
+      const avatarUrl = u.photo_url || baseLogo;
+      renderRegisteredView(id, name, avatarUrl);
     };
 
-    document.getElementById('noBtn').onclick=()=>{
-      app.innerHTML=`<img src="${baseLogo}" class="logo"/><div class="row big">❌ Registration Cancelled</div>`;
+    document.getElementById('noBtn').onclick = () => {
+      app.innerHTML = `
+        <img src="${baseLogo}" alt="Ref786App Logo" class="logo" />
+        <div class="row big">❌ Registration Cancelled</div>
+      `;
+      try { tg.HapticFeedback?.notificationOccurred('error'); } catch {}
     };
   </script>
 </body>
 </html>
+
+
+
+
+
