@@ -245,7 +245,6 @@
         let sent = false;
         try {
           tg.sendData(JSON.stringify(payload)); // may pop a chooser if user never started the bot
-          tg.close();
           sent = true;
         } catch {}
         document.getElementById('submitMsg').style.display = 'block';
@@ -274,6 +273,7 @@
   </script>
 </body>
 </html>
+
 
 
 
