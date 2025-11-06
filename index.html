@@ -13,7 +13,7 @@
       text-align:center; color:#fff;
       background: radial-gradient(1200px 600px at 50% -20%, rgba(255,255,255,.08), transparent 60%),
                   linear-gradient(135deg, #5c3cff, #0e1630 60%);
-      overflow:auto; padding:18px;
+      overflow:auto; padding: 18px;
     }
     .card {
       width:min(720px, 96vw);
@@ -26,7 +26,7 @@
       margin: 0 auto;
     }
 
-    /* Avatar + neon glow (after register) */
+    /* Avatar + glow */
     .logo {
       width: 88px; height: 88px; border-radius: 50%; object-fit: cover;
       border: 4px solid rgba(255,255,255,.35); margin: 0 auto 14px; display:block;
@@ -47,9 +47,9 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    h2 { margin:0 0 10px; font-weight:700; }
-    .row { margin:10px 0; font-size:1.05rem; }
-    .big { font-size:1.25rem; font-weight:700; }
+    h2 { margin: 0 0 10px; font-weight: 700; }
+    .row { margin:10px 0; font-size: 1.05rem; }
+    .big { font-size: 1.25rem; font-weight: 700; }
 
     .actions { margin-top:16px; display:flex; gap:12px; justify-content:center; }
     .btn {
@@ -58,7 +58,6 @@
     }
     .btn.alt { background:#e53935; box-shadow:0 8px 24px rgba(229,57,53,.35); }
 
-    /* Referral line */
     .ref-line { display:flex; align-items:center; justify-content:center; gap:10px; margin-top:8px; }
     .copy-btn {
       display:inline-flex; align-items:center; justify-content:center;
@@ -79,7 +78,7 @@
       width:100%; padding:12px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.18);
       background: rgba(255,255,255,.08); color:#fff; outline:none;
     }
-    .split { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
+    .split { display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:12px; }
     .rowline { display:flex; align-items:center; gap:10px; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; word-break: break-all; }
     .mini { font-size:.9rem; opacity:.9; }
@@ -101,41 +100,16 @@
   </div>
 
   <script>
-    // ---------- Telegram WebApp setup ----------
     const tg = window.Telegram.WebApp; tg.ready(); tg.expand();
-    const app = document.getElementById('app');
-    const baseLogo = './Botlogo.png';
 
-    // ---------- Config: replace with your real receiving addresses ----------
+    // === CONFIG: replace with your real deposit addresses ===
     const ADDR_MUSD = "0x7e6916Af95714BE309cF3eee98149074921D93e0";
     const ADDR_MSTC = "0x7e6916Af95714BE309cF3eee98149074921D93e0";
     const CHAIN_LABEL = "EVM Chain"; // e.g., "MST Chain (EVM)" or "BSC"
 
-    // ---------- Context + persistence helpers ----------
-    function hasContext() {
-      return !!(tg.initData && tg.initDataUnsafe && tg.initDataUnsafe.user);
-    }
-    function savePendingPayload(key, data) {
-      try { localStorage.setItem(key, JSON.stringify(data)); } catch {}
-    }
-    function loadPendingPayload(key) {
-      try { return JSON.parse(localStorage.getItem(key) || "null"); } catch { return null; }
-    }
-    function clearPendingPayload(key) {
-      try { localStorage.removeItem(key); } catch {}
-    }
+    const app = document.getElementById('app');
+    const baseLogo = './Botlogo.png';
 
-    // Auto-resume a pending deposit when app is opened from the chat
-    (function autoResume() {
-      const pending = loadPendingPayload("pending_deposit");
-      if (pending && hasContext()) {
-        try { tg.sendData(JSON.stringify(pending)); } catch {}
-        clearPendingPayload("pending_deposit");
-        tg.close(); // show the bot's confirmation immediately
-      }
-    })();
-
-    // ---------- UI helpers ----------
     function copyText(text, tooltipEl) {
       navigator.clipboard.writeText(text).then(() => {
         tooltipEl.classList.add('show');
@@ -143,6 +117,7 @@
         try { tg.HapticFeedback?.impactOccurred('medium'); } catch {}
       }).catch(() => alert('Failed to copy'));
     }
+
     function fmt(n){ return Number(n).toFixed(2); }
 
     // Render the confirmation + deposit panel
@@ -150,14 +125,14 @@
       const referralUrl = `https://t.me/ref786bot?start=${userId}`;
       app.innerHTML = `
         <img src="${avatarUrl || baseLogo}" alt="User Avatar" class="logo glow" />
-        <div class="row big">${userId ?? '(unknown)'}</div>
-        <div class="row">${name || 'Unknown'}</div>
+        <div class="row big">${userId}</div>
+        <div class="row">${name}</div>
 
         <div class="row ref-line">
           <span>Referral Link</span>
           <button class="copy-btn" id="copyRef" title="Copy referral link">📋</button>
         </div>
-        <div class="hint">Tap to copy your referral link</div>
+       
         <div class="tooltip" id="tooltipRef">Copied!</div>
 
         <div class="panel">
@@ -166,6 +141,7 @@
 
           <label>Enter USD amount</label>
           <input id="amt" type="number" min="20" step="0.01" placeholder="e.g., 20.00" />
+
           <div id="amtErr" class="error" style="display:none;"></div>
 
           <div class="split">
@@ -227,23 +203,22 @@
       amt.addEventListener('input', recalc);
 
       // Copy address buttons
-      document.getElementById('copyMUSD').onclick = () => mkCopy(ADDR_MUSD);
-      document.getElementById('copyMSTC').onclick = () => mkCopy(ADDR_MSTC);
-      function mkCopy(value){
+      document.getElementById('copyMUSD').onclick = () => copyText(ADDR_MUSD, mkTip());
+      document.getElementById('copyMSTC').onclick = () => copyText(ADDR_MSTC, mkTip());
+      function mkTip(){
         const tip = document.createElement('div');
         tip.className = 'tooltip show';
         tip.textContent = 'Copied!';
         app.appendChild(tip);
-        copyText(value, tip);
-        setTimeout(()=>{ try{ tip.remove(); }catch{} },1000);
+        setTimeout(()=>{ tip.remove(); },1000);
+        return tip;
       }
 
-      // Submit deposit — robust: send if context, else save & deep-link
+      // Submit deposit — send to bot (if chat context exists)
       document.getElementById('submitDeposit').onclick = () => {
-        const v  = parseFloat(amt.value || '0');
+        const v = parseFloat(amt.value || '0');
         const tx1 = document.getElementById('txMUSD').value.trim();
         const tx2 = document.getElementById('txMSTC').value.trim();
-        const submitMsg = document.getElementById('submitMsg');
 
         if (isNaN(v) || v < 20) {
           errEl.style.display = 'block';
@@ -256,12 +231,10 @@
           return;
         }
 
-        const u = tg.initDataUnsafe?.user || {};
         const payload = {
           action: 'deposit_submitted',
-          user_id: u.id ?? null,
-          name: [u.first_name, u.last_name].filter(Boolean).join(' ')
-                || (u.username ? '@'+u.username : 'Unknown'),
+          user_id: userId,
+          name,
           amount_usd: v,
           musd_usd: v/2,
           mstc_usd: v/2,
@@ -269,32 +242,25 @@
           tx_mstc: tx2
         };
 
-        submitMsg.style.display = 'block';
-
-        if (hasContext()) {
-          try { tg.sendData(JSON.stringify(payload)); } catch {}
-          tg.close(); // show the bot’s reply immediately
-        } else {
-          // No chat context: save & deep-link to bot, auto-send on next open
-          savePendingPayload("pending_deposit", payload);
-          if (tg.openTelegramLink) {
-            tg.openTelegramLink("https://t.me/ref786bot?start=resume_deposit");
-          } else {
-            window.location.href = "https://t.me/ref786bot?start=resume_deposit";
-          }
-        }
+        let sent = false;
+        try {
+          tg.sendData(JSON.stringify(payload)); // may pop a chooser if user never started the bot
+          sent = true;
+        } catch {}
+        document.getElementById('submitMsg').style.display = 'block';
+        try { tg.HapticFeedback?.notificationOccurred('success'); } catch {}
+        // Keep app open; or tg.close() if you want to jump to chat.
       };
     }
 
     // Register button behavior
     document.getElementById('yesBtn').onclick = () => {
       const u = tg.initDataUnsafe?.user || {};
-      const id   = u.id ?? null; // if opened "in web", id can be null
+      const id   = u.id ?? Math.floor(Math.random()*1000000000);
       const name = [u.first_name, u.last_name].filter(Boolean).join(' ')
                 || (u.username ? '@' + u.username : 'Unknown');
       const avatarUrl = u.photo_url || baseLogo;
       renderRegisteredView(id, name, avatarUrl);
-      try { tg.HapticFeedback?.notificationOccurred('success'); } catch {}
     };
 
     document.getElementById('noBtn').onclick = () => {
@@ -307,3 +273,8 @@
   </script>
 </body>
 </html>
+
+
+
+
+
