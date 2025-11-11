@@ -88,7 +88,7 @@
 </head>
 <body>
   <div class="card" id="app">
-    <img src="./Botologo.png" alt="MSTC EARNING PROJECT" class="logo" id="avatar" />
+    <img src="./Botologo_new.png" alt="MSTC EARNING PROJECT" class="logo" id="avatar" />
     <h2>Do you want to Register?</h2>
     <div class="actions">
       <button class="btn" id="yesBtn">✅ Yes</button>
@@ -99,7 +99,7 @@
   <script>
     const tg = window.Telegram.WebApp; tg.ready(); tg.expand();
     const app = document.getElementById('app');
-    const baseLogo = './Botlogo.png';
+    const baseLogo = './Botologo_new.png';
 
     // ---- replace with your real wallets ----
     const ADDR_MUSD = "0x7e6916Af95714BE309cF3eee98149074921D93e0";
@@ -135,12 +135,11 @@
         <div class="row ref-line">
           <span>Referral Link</span><button class="copy-btn" id="copyRef">📋</button>
         </div>
-        <div class="hint">Tap to copy your referral link</div>
         <div class="tooltip" id="tipRef">Copied!</div>
 
         <div class="panel">
           <h3>💳 Deposit</h3>
-          <div class="mini">Minimum deposit — <b>$20</b>. Split <b>70% MUSD</b> / <b>30% MSTC</b>.</div>
+          <div class="mini">Minimum deposit — <b>$20</b>.</div>
 
           <label>Enter USD amount</label>
           <input id="amt" type="number" min="20" step="0.01" placeholder="e.g., 20.00" />
@@ -231,4 +230,5 @@
   </script>
 </body>
 </html>
+
 
